@@ -13,7 +13,7 @@ command -v nvidia-smi >/dev/null || {
 nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv,noheader
 
 CONDA_ROOT="${CONDA_ROOT:-$HOME/miniconda3}"
-LEROBOT_SPEC="${LEROBOT_SPEC:-lerobot[core_scripts,training,feetech,smolvla]}"
+LEROBOT_SPEC="${LEROBOT_SPEC:-lerobot[core_scripts,training,feetech,smolvla,async]==0.6.2}"
 
 if ! command -v conda >/dev/null 2>&1; then
   if [[ ! -f "$CONDA_ROOT/etc/profile.d/conda.sh" ]]; then
