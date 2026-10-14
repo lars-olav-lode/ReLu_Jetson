@@ -21,7 +21,7 @@ if ! command -v conda >/dev/null 2>&1; then
       echo "$CONDA_ROOT finnes, men er ikke en komplett Conda-installasjon." >&2; exit 1;
     }
     command -v curl >/dev/null || { echo "curl mangler." >&2; exit 1; }
-    installer="$(mktemp)"
+    installer="$(mktemp /tmp/miniconda-installer-XXXXXXXX.sh)"
     trap 'rm -f -- "$installer"' EXIT
     echo "Installerer Miniconda i $CONDA_ROOT. Installasjonen omfattes av Anacondas vilkår."
     curl -fL --retry 3 https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -o "$installer"
@@ -33,6 +33,9 @@ if ! command -v conda >/dev/null 2>&1; then
 fi
 conda_base="$(conda info --base)"
 source "$conda_base/etc/profile.d/conda.sh"
+# Make conda available in future interactive Bash sessions.
+# This updates the user's ~/.bashrc, not system shell configuration.
+conda init bash
 
 # Use conda-forge explicitly, without changing global channel settings.
 # evdev is prebuilt here: no system headers or root permissions needed.
@@ -78,3 +81,13 @@ printf 'source "%s/etc/profile.d/conda.sh"\n' "$conda_base"
 echo 'conda activate lerobot'
 echo "Pakkeversjoner er lagret i: $manifest_dir"
 echo 'Trening startes separat med bash scripts/train.sh.'
+
+# Start interactive shell with lerobot activated
+if [[ -t 0 && -t 1 ]]; then
+  echo "Åpner Bash med lerobot aktivert. Bruk exit for å gå tilbake."
+  exec bash --rcfile <(
+    printf '%s\n' '[[ ! -f ~/.bashrc ]] || source ~/.bashrc'
+    printf 'source %q\n' "$conda_base/etc/profile.d/conda.sh"
+    printf '%s\n' 'conda activate lerobot'
+  ) -i
+fi
