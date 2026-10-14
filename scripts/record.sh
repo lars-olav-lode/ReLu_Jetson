@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # STATION=s1 \
 # DATASET=pick_place \
 # TASK="Legg klossen i boksen" \
@@ -5,8 +6,10 @@
 # bash scripts/record.sh
 
 
-#!/usr/bin/env bash
-set -e
+set -euo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
+require_environment lerobot-record
+load_station
 cd "$(dirname "$0")/.."
 
 missing=()
@@ -36,17 +39,20 @@ echo "Lagringsmappe: $DATA_DIR"
 echo "Oppgave: $TASK"
 echo "Opplasting til HF: av"
 
+require_ports follower leader
+require_calibration follower leader
+
 lerobot-record \
   --robot.type=so101_follower \
-  --robot.port="${FOLLOWER_PORT:-COM3}" \
+  --robot.port="$FOLLOWER_PORT" \
   --robot.id="follower_${STATION}" \
   --robot.calibration_dir=calibration/robots/so101_follower \
-  --robot.cameras="{ front: {type: opencv, index_or_path: ${CAM_FRONT:-0}, width: 640, height: 480, fps: 30}, wrist: {type: opencv, index_or_path: ${CAM_WRIST:-2}, width: 640, height: 480, fps: 30}}" \
+  --robot.cameras="$(station_cameras)" \
   --teleop.type=so101_leader \
-  --teleop.port="${LEADER_PORT:-COM4}" \
+  --teleop.port="$LEADER_PORT" \
   --teleop.id="leader_${STATION}" \
   --teleop.calibration_dir=calibration/teleoperators/so101_leader \
-  --display_data=true \
+  --display_data="${DISPLAY_DATA:-true}" \
   --dataset.repo_id="$REPO_ID" \
   --dataset.root="$DATA_DIR" \
   --dataset.single_task="$TASK" \

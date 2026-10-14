@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # STATION=s1 \
 # FOLLOWER_PORT="/dev/ttyACM0" \
 # MODEL_PATH="/home/relu/models/pick_place/pretrained_model" \
@@ -7,8 +8,11 @@
 
 
 
-#!/usr/bin/env bash
 set -euo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
+require_environment lerobot-rollout
+load_station
+require_ports follower
 
 cd "$(dirname "$0")/.."
 
@@ -47,7 +51,7 @@ CALIB_FILE="$CALIB_DIR/follower_${STATION}.json"
 
 if [ ! -f "$CALIB_FILE" ]; then
   echo "Mangler kalibrering: $CALIB_FILE"
-  echo "Kjør calibrate.sh først."
+  echo "Kjør scripts/calibration.sh med samme STATION og TARGET=follower først."
   exit 1
 fi
 
@@ -57,15 +61,20 @@ echo "Modell: $MODEL_PATH"
 echo "Oppgave: $TASK"
 echo "Kjøretid: ${DURATION_S:-30} sekunder"
 
+RENAME_FLAGS=()
+[ -z "${RENAME_MAP:-}" ] || RENAME_FLAGS=(--rename_map="$RENAME_MAP")
+
 lerobot-rollout \
   --strategy.type=base \
   --robot.type=so101_follower \
   --robot.port="$FOLLOWER_PORT" \
   --robot.id="follower_${STATION}" \
   --robot.calibration_dir="$CALIB_DIR" \
-  --robot.cameras="{ front: {type: opencv, index_or_path: ${CAM_FRONT:-0}, width: 640, height: 480, fps: 30}, wrist: {type: opencv, index_or_path: ${CAM_WRIST:-2}, width: 640, height: 480, fps: 30}}" \
+  --robot.cameras="$(station_cameras)" \
   --policy.path="$MODEL_PATH" \
+  "${RENAME_FLAGS[@]}" \
   --device="${DEVICE:-cuda}" \
   --task="$TASK" \
+  --fps="${FPS:-30}" \
   --duration="${DURATION_S:-30}" \
   --display_data="${DISPLAY_DATA:-false}"

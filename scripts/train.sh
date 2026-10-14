@@ -11,6 +11,8 @@
 
 # rename_map kobler kameranavnene i datasettet til navnene modellen forventer. For eksempel kan front kobles til camera1 og wrist til camera2. Dette endrer ikke bildene eller filene, bare navnene som brukes når dataene sendes til modellen. Samme kobling må brukes under trening og modellkjøring.
 set -euo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
+require_environment lerobot-train
 
 cd "$(dirname "$0")/.."
 
@@ -66,7 +68,7 @@ lerobot-train \
   --dataset.root="$DATA_DIR" \
   "${POLICY_FLAGS[@]}" \
   "${RENAME_FLAGS[@]}" \
-  --policy.device=cuda \
+  --policy.device="${DEVICE:-cuda}" \
   --policy.push_to_hub=false \
   --output_dir="$OUTPUT_DIR" \
   --job_name="${JOB_NAME:-$(basename "$OUTPUT_DIR")}" \

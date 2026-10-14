@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Teleoperasjon på en ReLu SO-101-stasjon.
 #
 # Bruk:
@@ -6,7 +6,10 @@
 #
 # STATION: s1 = IKKE ved vinduene, s2 = ved vinduene
 
-set -e
+set -euo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
+require_environment lerobot-teleoperate
+load_station
 cd "$(dirname "$0")/.."
 
 if [ "$STATION" != "s1" ] && [ "$STATION" != "s2" ]; then
@@ -18,10 +21,13 @@ fi
 
 echo "Stasjon: $STATION"
 
+require_ports follower leader
+require_calibration follower leader
+
 lerobot-teleoperate \
-  --robot.type=so101_follower --robot.port=${FOLLOWER_PORT:-COM3} --robot.id=follower_${STATION} \
+  --robot.type=so101_follower --robot.port="$FOLLOWER_PORT" --robot.id="follower_${STATION}" \
   --robot.calibration_dir=calibration/robots/so101_follower \
-  --robot.cameras="{ front: {type: opencv, index_or_path: ${CAM_FRONT:-0}, width: 640, height: 480, fps: 30}, wrist: {type: opencv, index_or_path: ${CAM_WRIST:-2}, width: 640, height: 480, fps: 30}}" \
-  --teleop.type=so101_leader --teleop.port=${LEADER_PORT:-COM4} --teleop.id=leader_${STATION} \
+  --robot.cameras="$(station_cameras)" \
+  --teleop.type=so101_leader --teleop.port="$LEADER_PORT" --teleop.id="leader_${STATION}" \
   --teleop.calibration_dir=calibration/teleoperators/so101_leader \
-  --display_data=true
+  --display_data="${DISPLAY_DATA:-true}"
